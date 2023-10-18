@@ -6,6 +6,15 @@ SlideVar.pl is a computational pipeline for detecting lineage-specific changes b
 ---
 ## USAGE
 
+This pipeline requires two input files: one is a multiple sequence alignment file in FASTA format, and the other is a marker text file used to label the target taxonomic group.
+
+
+For a given multiple sequence alignment, SlideVar will by default select the first sequence as the reference sequence. For each of the other sequences, it will perform the single nucleotide resolution sequence consistency assessment within the given window size and output the consistency result for each species relative to the reference sequence.
+
+
+Once all sequences have been processed, SlideVar will then perform lineage-specific mutation detection at each position of the sequences. If a position shows low conservation (e.g. match below 70%) in the marked species, but high similarity (e.g. match above 90%) in other species, it can be identified as a position with a lineage-specific change in the target group.
+
+
 
 Usage:
     perl SlideVar.pl -in <input.fasta> -l <species.list> -w <window size> -con <conserved number> -div <changed number> -bn <background can not conserved species>
