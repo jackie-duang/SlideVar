@@ -1,5 +1,11 @@
 # SlideVar
-Sliding Window Variation Identifier (SlideVar)
+_Sliding Window Variation Identifier (SlideVar)_
+
+SlideVar.pl is a computational pipeline for detecting lineage-specific changes based on sequence consistency. Its main method is to slide a window of size 1 over previously aligned sequences to assess sequence consistency at the single nucleotide level. It then searches for conserved positions that show lineage-specific variation in the target lineage. Because the pipeline only considers absolute character matches, it can also identify lineage-specific amino acid substitutions. Whether in genes or non-coding regulatory elements, functional sequences can be quite short (e.g. domains or transcription factor binding sites are often around 20bp). Therefore, SlideVar.pl is well suited for finding short segment specific changes within longer conserved regions. Overall, this pipeline uses windowed consistency scoring to identify lineage-differentiating variations embedded in multiple sequence alignments.
+
+---
+## USAGE
+
 
 Usage:
     perl SlideVar.pl -in <input.fasta> -l <species.list> -w <window size> -con <conserved number> -div <changed number> -bn <background can not conserved species>
