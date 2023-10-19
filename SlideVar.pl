@@ -10,9 +10,9 @@ Usage:
     -in input.fasta : sequence aligned in fasta format file
     -l species.list : species list with species marked 
     -w window size : default 20 , the window size for calculating the conserved region
-    -con conserved number : default 18 , identify as conserved region if the number of nucleotides in the window is large or equal to this value
-    -div changed number : default 12 , identify as changed region if the number of nucleotides in the window is less or equal to this value
-    -bn background can not conserved species : default 0 , how many species can be not conserved in the background species
+    -con conserved number : default 18 , threshold for conserved region, identity >= conserved number is conserved 
+    -div diverged number : default 12 , threshold for divergent region, identity <= diverged number is divergent
+    -bn  : default 0 , how many species could be divergent in background species (in case of some species are not conserved in background species because of assembly error or other reasons)
 	
     ---
     species list file format, one species per line and foreground species marked with '*':
@@ -60,7 +60,7 @@ my $line = 0;
 my %mapSites ;
 my $ref = '' ;
 
-my $file_prefix = "$in.win$window";
+my $file_prefix = "$in.w${window}c${conservedNumber}d${changedNumber}b${canChanged}";
 my $out = "$file_prefix.info";
 
 $/ = ">";
@@ -237,8 +237,8 @@ while (<I>){
 }
 close I ;
 
-open O , "> $out.conserved.list";
-print O "file\toriginalPositionBasedRef\tforegroundChangedSpecies\tbackgroundNotConservedSpecies\n";
+open O , "> $out.list";
+print O "file\toriginalPositionBasedRef\tTargetDivergedSpecies\tBackgroundNotConservedSpecies\n";
 foreach my $pos (sort {$a <=> $b} keys %hash){
     my $notConservedNumber = 0 ;
     my %notConservedSpecies = ();
@@ -256,7 +256,7 @@ foreach my $pos (sort {$a <=> $b} keys %hash){
     }
 
     if ($notConservedNumber > $canChanged){
-        print O "$in\t$pos\t#\tNotConserved\n";
+        print O "$in\t$pos\t.\t$notConservedNumber\n";
         next ;
     }
 
@@ -289,9 +289,14 @@ foreach my $pos (sort {$a <=> $b} keys %hash){
             $S = $changedInfo{$sp}{$window_count}{S} ;
             $M = $changedInfo{$sp}{$window_count}{M} ;
         }
-        $changedSpLine .= "$sp:M=$M,I=$I,D=$D,S=$S;" ;
+        $changedSpLine .= "$sp:M${M}I${I}D${D}S${S};" ;
     }
     $changedSpLine =~ s/;$// ;
+    if ($changedSpLine ne '#'){
+        $changedSpLine =~ s/^#//;
+    }else{
+        $changedSpLine = '.';
+    }
     print O "$changedSpLine\t";
     my $notConservedSpLine = '#';
     foreach my $sp (sort keys %notConservedSpecies){
@@ -307,9 +312,15 @@ foreach my $pos (sort {$a <=> $b} keys %hash){
             $S = $changedInfo{$sp}{$window_count}{S} ;
             $M = $changedInfo{$sp}{$window_count}{M} ;
         }
-        $notConservedSpLine .= "$sp:M=$M,I=$I,D=$D,S=$S;" ;
+        $notConservedSpLine .= "$sp:M${M}I${I}D${D}S${S};" ;
     }
     $notConservedSpLine =~ s/;$// ;
+    if ($notConservedSpLine ne '#'){
+        $notConservedSpLine =~ s/^#//;
+    }else{
+        $notConservedSpLine = '.';
+    }
+
     print O "$notConservedSpLine\n";
 }
 close O ;
