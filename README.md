@@ -6,25 +6,66 @@ SlideVar.pl is a computational pipeline for detecting lineage-specific changes b
 ---
 ## USAGE
 
-This pipeline requires two input files: one is a multiple sequence alignment file in FASTA format, and the other is a marker text file used to label the target taxonomic group.
+
+---
+## Pipeline for finding lineage-specfic divergent Conserved Noncoding Elements
 
 
-For a given multiple sequence alignment, SlideVar will by default select the first sequence as the reference sequence. For each of the other sequences, it will perform the single nucleotide resolution sequence consistency assessment within the given window size and output the consistency result for each species relative to the reference sequence.
+0. Make LAST database，for species with relatively distant phylogenetic relationships, MAM8 is recommended. (Here, we used LAST software to perform pairwised whole genome alignment. https://gitlab.com/mcfrith/last )
+```
+/path/to/last/bin/lastdb -u MAM8 ref ref.fa
+```
 
+1. Use lastal to get pairwised whole genome aligment, HOXD70 is better for distant phylogenetic relationships.
+```
+/path/to/last/bin/lastal -m10 -pHOXD70 /path/to/ref_MAM8_db query.fa > query.maf
+```
 
-Once all sequences have been processed, SlideVar will then perform lineage-specific mutation detection at each position of the sequences. If a position shows low conservation (e.g. match below 70%) in the marked species, but high similarity (e.g. match above 90%) in other species, it can be identified as a position with a lineage-specific change in the target group.
+2. Use last-split to get one-to-one alignment and sort the maf
+```
+/path/to/last/bin/last-split -m10 query.maf | /path/to/last/bin/last-split -r -m10 | /path/to/last/bin/maf-sort > query.sort.maf 
+```
 
+3. Combine all pairwised maf to multiple alignment maf
+```
+# remember to rename all pairwised alignment with maf format file to ref.query.sing.maf
+/path/to/multiz/build/roast - T=. E=ref  "(ref, (species1, (species2 , species3)))" combined.maf > roast.maf.sh && sh roast.maf.sh
+```
+Or you can simply join all mafs with maf-join
+```
+/path/to/last/bin/maf-join *sort.maf > combined.maf # note this will only combine maf block which all species have sequence alignment
+```
 
+4. phastCons (optional) see: http://compgen.cshl.edu/phast/phastCons-HOWTO.html
 
-Usage:
-    perl SlideVar.pl -in <input.fasta> -l <species.list> -w <window size> -con <conserved number> -div <changed number> -bn <background can not conserved species>
+5. You can also directly convert the maf block into fasta format and record tho position.
+```
+perl maf2fasta_by_speceis_list.pl <input.maf> <species.list> <min_length> <output_dir_prefix>
+```
+
+6. Run SlideVar.pl for each fasta file
+```
+for i in output_dir/*/*/Block*fasta; do 
+	perl SlideVar.pl -in input.fasta -l species.list -w 20 -con 18 -div 12 -bn 2
+done
+```
+
+7. Run mergeResults.pl to merge all results, the results in the file like "M1I2D3S4" means one site matched, 2 sites inserted, 3 sites deleted and 4 sites substituted. This also means the length of the window is 10 (1+2+3+4=10).
+```
+perl mergeResults.pl output_dir species.list output_file
+```
+
+---
+
+```
+perl SlideVar.pl -in <input.fasta> -l <species.list> -w <window size> -con <conserved number> -div <changed number> -bn <background diverged species>
 
     -in input.fasta : sequence aligned in fasta format file
     -l species.list : species list with species marked
     -w window size : default 20 , the window size for calculating the conserved region
-    -con conserved number : default 18 , identify as conserved region if the number of nucleotides in the window is large or equal to this value
-    -div changed number : default 12 , identify as changed region if the number of nucleotides in the window is less or equal to this value
-    -bn background can not conserved species : default 0 , how many species can be not conserved in the background species
+    -con conserved number : default 18 , threshold for conserved region, identity >= conserved number is conserved
+    -div diverged number : default 12 , threshold for divergent region, identity <= diverged number is divergent
+    -bn  : default 0 , how many species could be divergent in background species (in case of some species are not conserved in background species because of assembly error or other reasons)
 
     ---
     species list file format, one species per line and foreground species marked with '*':
@@ -41,3 +82,5 @@ Usage:
     or
     >species_name.seqId
     AAGCTTGGG
+
+```
