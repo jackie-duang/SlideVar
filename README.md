@@ -46,7 +46,7 @@ perl maf2fasta_by_speceis_list.pl <input.maf> <species.list> <min_length> <outpu
 6. Run SlideVar.pl for each fasta file
 ```
 for i in output_dir/*/*/Block*fasta; do 
-	perl SlideVar.pl -in input.fasta -l species.list -w 20 -con 18 -div 12 -bn 2
+	perl SlideVar.pl -in $i -l species.list -w 20 -con 18 -div 12 -bn 2
 done
 ```
 
