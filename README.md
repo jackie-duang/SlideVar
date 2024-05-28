@@ -68,7 +68,7 @@ perl SlideVar.pl -in <input.fasta> -l <species.list> -w <window size> -con <cons
     -bn  : default 0 , how many species could be divergent in background species (in case of some species are not conserved in background species because of assembly error or other reasons)
 
     ---
-    species list file format, one species per line and foreground species marked with '*':
+    species list file format, one species per line and foreground species marked with '*', note that reference species should not be marked as foreground species:
     human
     mouse
     snake *
