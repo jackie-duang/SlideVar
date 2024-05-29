@@ -156,12 +156,12 @@ while (<I>){
         # the final window is not complete, add it to the last position
         for (my $i=$step-$window+1;$i<$step;$i++){
             if (!exists $seq{'ref'}{$i}){
-                my $n = @nucls ;
-                print "$i $n is not in ref";
+                # my $n = @nucls ;
+                # print "$i $n is not in ref";
                 next ;
             }
             if (exists $addInfo{$sp}{$i}){
-                print "$i is already added\n";
+                # print "$i is already added\n";
                 next ;
             }
             $addInfo{$sp}{$i} = $window_id;
