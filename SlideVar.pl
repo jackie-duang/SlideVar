@@ -31,7 +31,7 @@ Usage:
     AAGCTTGGG
 USAGE
 
-# get options
+
 my ($in,$window,$speciesList, $conservedNumber, $changedNumber, $canChanged);
 
 GetOptions(
@@ -74,22 +74,22 @@ while (<I>){
     next if @a==0 ;
 
     # get id and sequence
-    my $id = shift @a ;
-    $id =~ /^(\w+)/;
-    $id = $1 ;
+    my $sp = shift @a ;
+    $sp =~ /^(\w+)/;
+    $sp = $1 ;
     my $seq = join '',@a ;
     $seq = uc($seq);
 
     # record the length of the longest id
-    if (length($id) > $length){
-        $length = length($id);
+    if (length($sp) > $length){
+        $length = length($sp);
     }
 
     # record the number of nucleotides in each species
     my @nucls = split //,$seq;
     my $start = 1 ;
     if ($ref eq ''){
-        $ref = $id;
+        $ref = $sp;
         my $ref_site = 0 ;
 
         # record the nucleotide at each site in the reference species
@@ -106,11 +106,10 @@ while (<I>){
         my $window_id = 0 ;
         my $step = 0 ;
         my %map = ();
-        my ($I, $D, $S) = (0,0,0);
+        my ($I, $D, $S, $G) = (0,0,0,0);
         # record the nucleotide at each site in each species and calculate the number of conserved nucleotides in each window
         for (my $i=0;$i<@nucls;$i++){
-            last if ($i > $last_pos);
-            if ((exists $seq{'ref'}{$i}) or ($nucls[$i] ne '-')){
+            if ((exists $seq{'ref'}{$i}) || ($nucls[$i] ne '-')){
                 $step ++ ;
                 $map{$step} = $i ;
                 if ((exists $seq{'ref'}{$i}) and ($nucls[$i] eq $seq{'ref'}{$i})){
@@ -131,11 +130,11 @@ while (<I>){
                     }
                 }
                 if ($step >= $window){
-                    $addInfo{$id}{$map{$step-$window+1}} = $window_id;
-                    $changedInfo{$id}{$map{$step-$window+1}}{I} = $I ;
-                    $changedInfo{$id}{$map{$step-$window+1}}{D} = $D ;
-                    $changedInfo{$id}{$map{$step-$window+1}}{S} = $S ;
-                    $changedInfo{$id}{$map{$step-$window+1}}{M} = $window_id ;
+                    $addInfo{$sp}{$map{$step-$window+1}} = $window_id;
+                    $changedInfo{$sp}{$map{$step-$window+1}}{I} = $I ;
+                    $changedInfo{$sp}{$map{$step-$window+1}}{D} = $D ;
+                    $changedInfo{$sp}{$map{$step-$window+1}}{S} = $S ;
+                    $changedInfo{$sp}{$map{$step-$window+1}}{M} = $window_id ;
                     if ((exists $seq{'ref'}{$map{$step-$window+1}}) and ($nucls[$map{$step-$window+1}] eq $seq{'ref'}{$map{$step-$window+1}})){
                         $window_id -- ;
                     }
@@ -154,6 +153,38 @@ while (<I>){
                 }
             }
         }
+        # the final window is not complete, add it to the last position
+        for (my $i=$step-$window+1;$i<$step;$i++){
+            if (!exists $seq{'ref'}{$i}){
+                my $n = @nucls ;
+                print "$i $n is not in ref";
+                next ;
+            }
+            if (exists $addInfo{$sp}{$i}){
+                print "$i is already added\n";
+                next ;
+            }
+            $addInfo{$sp}{$i} = $window_id;
+            $changedInfo{$sp}{$i}{I} = $I ;
+            $changedInfo{$sp}{$i}{D} = $D ;
+            $changedInfo{$sp}{$i}{S} = $S ;
+            $changedInfo{$sp}{$i}{M} = $window_id ;
+            if ((exists $seq{'ref'}{$i}) and ($nucls[$i] eq $seq{'ref'}{$i})){
+                $window_id -- ;
+            }
+            elsif (!exists $seq{'ref'}{$i} and $nucls[$i] ne '-'){
+                # insert
+                $I -- ;
+            }
+            elsif (exists $seq{'ref'}{$i} and $nucls[$i] eq '-'){
+                # delete
+                $D -- ;
+            }
+            else{
+                # substitution
+                $S -- ;
+            }
+        }
     }
 }
 close I ;
@@ -168,9 +199,10 @@ while (<I>){
     chomp;
     next if $_ =~ /^$/ ;
     my @a = split /\s+/, $_ ;
+    next if @a>=2 and $a[1] =~ /pheno/i ;
     $line ++ ;
     $info{$line}{id} = $a[0] ;
-    if (@a>1 and $a[1] =~ /\*|#/){
+    if (@a>1 and ($a[1] =~ /\*|#/ or $a[1] eq '0')){
         $foregroundSpecies{$a[0]} = 1 ;
     }
     else{
@@ -181,13 +213,13 @@ while (<I>){
 close I ;
 
 open O , "> $out";
-printf O "%-${length}s", "originalPos";
+printf O "%-${length}s", "RefPos";
 foreach my $k (sort {$a <=> $b} keys %{$seq{'ref'}}){
     printf O " %-4d",$mapSites{$k} + 1;
 }
 print O "\n";
 
-printf O "%-${length}s", "alignedPos";
+printf O "%-${length}s", "WithGapPos";
 foreach my $k (sort {$a <=> $b} keys %{$seq{'ref'}}){
     printf O " %-4d",$k + 1;
 }
@@ -220,28 +252,32 @@ while (<I>){
     chomp;
     my @a = split /\s+/,$_;
     next if @a==0 ;
-    if ($a[0] eq 'originalPos'){
+    if ($a[0] eq 'RefPos'){
         @positions = @a ;
+        next ;
     }
-    elsif ($a[0] eq 'alignedPos'){
+    elsif ($a[0] eq 'WithGapPos'){
         my @temps = @a ;
         for (my $i=1;$i<@temps;$i++){
             $tempMap{$positions[$i]} = $temps[$i] - 1 ;
         }
+        next ;
     }
     my $species = $a[0] ;
     next if $species eq $ref ;
     for (my $i=1;$i<@a;$i++){
-        $hash{$positions[$i]}{$species} = $a[$i] ;
+        $hash{$tempMap{$positions[$i]}}{$species} = $a[$i] ;
     }
 }
 close I ;
 
 open O , "> $out.list";
 print O "file\toriginalPositionBasedRef\tTargetDivergedSpecies\tBackgroundNotConservedSpecies\n";
-foreach my $pos (sort {$a <=> $b} keys %hash){
+foreach my $pos (sort {$a <=> $b} keys %{$seq{'ref'}}){
     my $notConservedNumber = 0 ;
     my %notConservedSpecies = ();
+    my $npos = $original_pos{$pos};
+
     foreach my $tpSp (sort keys %backgroundSpecies){
         if (exists $hash{$pos}{$tpSp}){
             if ($hash{$pos}{$tpSp} < $conservedNumber){
@@ -256,7 +292,7 @@ foreach my $pos (sort {$a <=> $b} keys %hash){
     }
 
     if ($notConservedNumber > $canChanged){
-        print O "$in\t$pos\t.\t$notConservedNumber\n";
+        print O "$in\t$npos\t.\t$notConservedNumber\n";
         next ;
     }
 
@@ -272,46 +308,49 @@ foreach my $pos (sort {$a <=> $b} keys %hash){
         }
     }
 
-    print O "$in\t$pos\t";
-    
-    my $changedSpLine = '#';
+    my $light = 1;
+    my $changedSpLine = "$in\t$npos\t";
     foreach my $sp (sort keys %changedSpecies){
         # get Insert Delete Substitution number
-        my $I = 'NA' ;
+        my $I = '-' ;
         my $D = $window ;
-        my $S = 'NA' ;
-        my $M = 'NA' ;
-        if (exists $changedInfo{$sp}){
-            # my $window_count = $mapWindow2Pos{$sp}{$pos - 1} ;
-            my $window_count = $tempMap{$pos} ;
+        my $S = '-' ;
+        my $M = '-' ;
+        # my $window_count = $tempMap{$pos} ;
+        my $window_count = $pos ;
+        if (exists $changedInfo{$sp}{$window_count}){
             $I = $changedInfo{$sp}{$window_count}{I} ;
             $D = $changedInfo{$sp}{$window_count}{D} ;
             $S = $changedInfo{$sp}{$window_count}{S} ;
             $M = $changedInfo{$sp}{$window_count}{M} ;
+        }
+        else{
+            $light = 0 ;
         }
         $changedSpLine .= "$sp:M${M}I${I}D${D}S${S};" ;
     }
     $changedSpLine =~ s/;$// ;
-    if ($changedSpLine ne '#'){
-        $changedSpLine =~ s/^#//;
-    }else{
-        $changedSpLine = '.';
+    # if ($changedSpLine ){
+    if ($changedSpLine !~ /:M/){
+        $changedSpLine .= '.';
     }
-    print O "$changedSpLine\t";
     my $notConservedSpLine = '#';
     foreach my $sp (sort keys %notConservedSpecies){
         # get Insert Delete Substitution number
-        my $I = 'NA' ;
+        my $I = '-' ;
         my $D = $window ;
-        my $S = 'NA' ;
-        my $M = 'NA' ;
-        if (exists $changedInfo{$sp}){
-            my $window_count = $tempMap{$pos} ;    
+        my $S = '-' ;
+        my $M = '-' ;
+        my $window_count = $pos ;
+        if (exists $changedInfo{$sp}{$window_count}){
             $I = $changedInfo{$sp}{$window_count}{I} ;
             $D = $changedInfo{$sp}{$window_count}{D} ;
             $S = $changedInfo{$sp}{$window_count}{S} ;
             $M = $changedInfo{$sp}{$window_count}{M} ;
         }
+		else{
+            $light = 0 ;
+		}
         $notConservedSpLine .= "$sp:M${M}I${I}D${D}S${S};" ;
     }
     $notConservedSpLine =~ s/;$// ;
@@ -320,7 +359,8 @@ foreach my $pos (sort {$a <=> $b} keys %hash){
     }else{
         $notConservedSpLine = '.';
     }
-
-    print O "$notConservedSpLine\n";
+    last if $light == 0 ;
+    print O "$changedSpLine\t$notConservedSpLine\n";
 }
 close O ;
+
