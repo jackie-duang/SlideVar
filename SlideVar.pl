@@ -154,25 +154,20 @@ while (<I>){
             }
         }
         # the final window is not complete, add it to the last position
-        for (my $i=$step-$window+1;$i<$step;$i++){
-            if (!exists $seq{'ref'}{$i}){
-                # my $n = @nucls ;
-                # print "$i $n is not in ref";
-                next ;
-            }
-            if (exists $addInfo{$sp}{$i}){
+        for (my $i=$step-$window+2;$i<=$step;$i++){
+            if (exists $addInfo{$sp}{$map{$i}}){
                 # print "$i is already added\n";
                 next ;
             }
-            $addInfo{$sp}{$i} = $window_id;
-            $changedInfo{$sp}{$i}{I} = $I ;
-            $changedInfo{$sp}{$i}{D} = $D ;
-            $changedInfo{$sp}{$i}{S} = $S ;
-            $changedInfo{$sp}{$i}{M} = $window_id ;
-            if ((exists $seq{'ref'}{$i}) and ($nucls[$i] eq $seq{'ref'}{$i})){
+            $addInfo{$sp}{$map{$i}} = $window_id;
+            $changedInfo{$sp}{$map{$i}}{I} = $I ;
+            $changedInfo{$sp}{$map{$i}}{D} = $D ;
+            $changedInfo{$sp}{$map{$i}}{S} = $S ;
+            $changedInfo{$sp}{$map{$i}}{M} = $window_id ;
+            if ((exists $seq{'ref'}{$map{$i}}) and ($nucls[$map{$i}] eq $seq{'ref'}{$map{$i}})){
                 $window_id -- ;
             }
-            elsif (!exists $seq{'ref'}{$i} and $nucls[$i] ne '-'){
+            elsif (!exists $seq{'ref'}{$map{$i}} and $nucls[$map{$i}] ne '-'){
                 # insert
                 $I -- ;
             }
