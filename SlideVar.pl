@@ -157,7 +157,7 @@ while (<I>){
         for (my $i=$step-$window+2;$i<=$step;$i++){
 	    next unless $i > 0 ;
             if (exists $addInfo{$sp}{$map{$i}}){
-                print "$i is already added\n";
+                # print "$i is already added\n";
                 next ;
             }
             $addInfo{$sp}{$map{$i}} = $window_id;
