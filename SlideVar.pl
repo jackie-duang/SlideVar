@@ -155,8 +155,9 @@ while (<I>){
         }
         # the final window is not complete, add it to the last position
         for (my $i=$step-$window+2;$i<=$step;$i++){
+
             if (exists $addInfo{$sp}{$map{$i}}){
-                # print "$i is already added\n";
+                print "$i is already added\n";
                 next ;
             }
             $addInfo{$sp}{$map{$i}} = $window_id;
@@ -306,12 +307,12 @@ foreach my $pos (sort {$a <=> $b} keys %{$seq{'ref'}}){
     my $light = 1;
     my $changedSpLine = "$in\t$npos\t";
     foreach my $sp (sort keys %changedSpecies){
-        # get Insert Delete Substitution number
+
         my $I = '-' ;
         my $D = $window ;
         my $S = '-' ;
         my $M = '-' ;
-        # my $window_count = $tempMap{$pos} ;
+
         my $window_count = $pos ;
         if (exists $changedInfo{$sp}{$window_count}){
             $I = $changedInfo{$sp}{$window_count}{I} ;
@@ -325,13 +326,13 @@ foreach my $pos (sort {$a <=> $b} keys %{$seq{'ref'}}){
         $changedSpLine .= "$sp:M${M}I${I}D${D}S${S};" ;
     }
     $changedSpLine =~ s/;$// ;
-    # if ($changedSpLine ){
+
     if ($changedSpLine !~ /:M/){
         $changedSpLine .= '.';
     }
     my $notConservedSpLine = '#';
     foreach my $sp (sort keys %notConservedSpecies){
-        # get Insert Delete Substitution number
+
         my $I = '-' ;
         my $D = $window ;
         my $S = '-' ;
@@ -358,4 +359,3 @@ foreach my $pos (sort {$a <=> $b} keys %{$seq{'ref'}}){
     print O "$changedSpLine\t$notConservedSpLine\n";
 }
 close O ;
-
