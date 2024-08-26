@@ -154,12 +154,15 @@ while (<I>){
             }
         }
         # the final window is not complete, add it to the last position
-        for (my $i=$step-$window+2;$i<=$step;$i++){
-	    next unless $i > 0 ;
-            if (exists $addInfo{$sp}{$map{$i}}){
-                # print "$i is already added\n";
-                next ;
-            }
+        my $fi_start = $step-$window+2 ;
+        if ($step < $window ){
+            $fi_start = 1 ;
+        }else{
+            for (my $i=$fi_start;$i<=$step;$i++){
+                if (exists $addInfo{$sp}{$map{$i}}){
+                    # print "$i is already added\n";
+                    next ;
+            	}
             $addInfo{$sp}{$map{$i}} = $window_id;
             $changedInfo{$sp}{$map{$i}}{I} = $I ;
             $changedInfo{$sp}{$map{$i}}{D} = $D ;
