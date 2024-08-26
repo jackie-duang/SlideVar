@@ -157,34 +157,34 @@ while (<I>){
         my $fi_start = $step-$window+2 ;
         if ($step < $window ){
             $fi_start = 1 ;
-        }else{
-            for (my $i=$fi_start;$i<=$step;$i++){
-                if (exists $addInfo{$sp}{$map{$i}}){
-                    # print "$i is already added\n";
-                    next ;
-            	}
-            $addInfo{$sp}{$map{$i}} = $window_id;
-            $changedInfo{$sp}{$map{$i}}{I} = $I ;
-            $changedInfo{$sp}{$map{$i}}{D} = $D ;
-            $changedInfo{$sp}{$map{$i}}{S} = $S ;
-            $changedInfo{$sp}{$map{$i}}{M} = $window_id ;
-            if ((exists $seq{'ref'}{$map{$i}}) and ($nucls[$map{$i}] eq $seq{'ref'}{$map{$i}})){
-                $window_id -- ;
-            }
-            elsif (!exists $seq{'ref'}{$map{$i}} and $nucls[$map{$i}] ne '-'){
-                # insert
-                $I -- ;
-            }
-            elsif (exists $seq{'ref'}{$i} and $nucls[$i] eq '-'){
-                # delete
-                $D -- ;
-            }
-            else{
-                # substitution
-                $S -- ;
-            }
         }
-    }
+		for (my $i=$fi_start;$i<=$step;$i++){
+			if (exists $addInfo{$sp}{$map{$i}}){
+				# print "$i is already added\n";
+				next ;
+			}
+			$addInfo{$sp}{$map{$i}} = $window_id;
+			$changedInfo{$sp}{$map{$i}}{I} = $I ;
+			$changedInfo{$sp}{$map{$i}}{D} = $D ;
+			$changedInfo{$sp}{$map{$i}}{S} = $S ;
+			$changedInfo{$sp}{$map{$i}}{M} = $window_id ;
+			if ((exists $seq{'ref'}{$map{$i}}) and ($nucls[$map{$i}] eq $seq{'ref'}{$map{$i}})){
+				$window_id -- ;
+			}
+			elsif (!exists $seq{'ref'}{$map{$i}} and $nucls[$map{$i}] ne '-'){
+				# insert
+				$I -- ;
+			}
+			elsif (exists $seq{'ref'}{$map{$i}} and $nucls[$map{$i}] eq '-'){
+				# delete
+				$D -- ;
+			}
+			else{
+				# substitution
+				$S -- ;
+			}
+		}
+    
 }
 close I ;
 $/ = "\n";
